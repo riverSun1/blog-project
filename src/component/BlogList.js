@@ -2,14 +2,13 @@ import axios from 'axios';
 import { useState, useEffect, useCallback, useRef } from 'react';
 // state 사용시 무한 반복 => useEffect 사용.
 import Card from '../component/Card';
-import { Link } from 'react-router-dom';
 import { useHistory } from 'react-router';
 import LoadingSpinner from '../component/LoadingSpinner';
 import Pagination, { bool } from './Pagination';
 import { useLocation } from 'react-router-dom'; // 현재 URL 정보 가져오기
 import propTypes from 'prop-types';
-import Toast from '../component/Toast';
-import { v4 as uuidv4 } from 'uuid'; // 유니크한 ID
+// import { v4 as uuidv4 } from 'uuid'; // 유니크한 ID
+import useToast from '../hooks/toast';
 
 const BlogList = ({ isAdmin }) => {
     const history = useHistory();
@@ -23,8 +22,10 @@ const BlogList = ({ isAdmin }) => {
     const [numberOfPages, setNumberOfPages] = useState(0); // 몇개의 페이지를 보여주느냐.
     const [searchText, setSearchText] = useState('');
     // const [toasts, setToasts] = useState([]);
-    const [, setToastsRerender] = useState(false); // true, false가 바뀌면 rerendering됨.
-    const toasts = useRef([]);
+    
+    const { addToast } = useToast();
+    // const [, setToastsRerender] = useState(false); // true, false가 바뀌면 rerendering됨.
+    // const toasts = useRef([]);
     const limit = 5; // 한 페이지당 포스트 갯수
 
     // 한 페이지당 포스트갯수
@@ -75,32 +76,32 @@ const BlogList = ({ isAdmin }) => {
 
     // npm i uuid
     // true일 경우 들어가고 false일 경우 들어가지 않는다.
-    const deleteToast = (id) => {
-        const filteredToasts = toasts.current.filter(toast => {
-            return toast.id != id; // 다를 경우 남겨두고 같으면 삭제
-        });
-        toasts.current = filteredToasts;
-        setToasts(filteredToasts);
-        setToastsRerender(prev => !prev);
-    }
+    // const deleteToast = (id) => {
+    //     const filteredToasts = toasts.current.filter(toast => {
+    //         return toast.id != id; // 다를 경우 남겨두고 같으면 삭제
+    //     });
+    //     toasts.current = filteredToasts;
+    //     setToasts(filteredToasts);
+    //     setToastsRerender(prev => !prev);
+    // }
 
-    const addToast = (toast) => {
-        const id = uuid4();
-        const toastWithId = {
-            ...toast,
-            id: id
-        }
-        toasts.current = [
-            ...toasts.current,
-            toastWithId
-        ];
-        setToastsRerender(prev => !prev);
-        // setToasts(prev => [...prev, toastWithId]); // 기존 toast와 새로운 toast를 합친다.
+    // const addToast = (toast) => {
+    //     const id = uuid4();
+    //     const toastWithId = {
+    //         ...toast,
+    //         id: id
+    //     }
+    //     toasts.current = [
+    //         ...toasts.current,
+    //         toastWithId
+    //     ];
+    //     setToastsRerender(prev => !prev);
+    //     // setToasts(prev => [...prev, toastWithId]); // 기존 toast와 새로운 toast를 합친다.
         
-        setTimeout(() => {
-            deleteToast(id);
-        }, 5000);
-    };
+    //     setTimeout(() => {
+    //         deleteToast(id);
+    //     }, 5000);
+    // };
 
     const deleteBlog = (e, id) => {
         e.stopPropagation();
@@ -166,10 +167,10 @@ const BlogList = ({ isAdmin }) => {
     // props로 넘긴다.
     return (
         <div>
-            <Toast
-                toasts={toasts.current}
+            {/* <Toast
+                toasts={toasts}
                 deleteToast={deleteToast}
-            />
+            /> */}
             <input
                 type="text"
                 placeholder='Search...'

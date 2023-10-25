@@ -16,11 +16,13 @@ const routes = [
     },
     {
       path: '/admin',
-      component: AdminPage
+      component: AdminPage,
+      auth: true
     },
     {
       path: '/blogs/create',
-      component: CreatePage
+      component: CreatePage,
+      auth: true
     },
     {
       path: '/blogs/:id',
@@ -28,7 +30,8 @@ const routes = [
     },
     {
       path: '/blogs/:id/edit',
-      component: EditPage
+      component: EditPage,
+      auth: true
     }
 ];
 

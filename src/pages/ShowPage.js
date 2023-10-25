@@ -3,11 +3,14 @@ import axios from 'axios';
 import { useEffect, useState } from "react";
 import LoadingSpinner from "../component/LoadingSpinner";
 import { Link } from "react-router-dom";
+import { useSelector } from "react-redux";
 
 const ShowPage = () => {
     const { id } = useParams();
     const [post, setPost] = useState(null); // 데이터를 받아와서 state에 보관.
     const [loading, setLoading] = useState(true); // 데이터 받아오기 전까진 로딩 상태 표시.
+    const isLoggedIn = useSelector(state => state.auth.isLoggedIn);
+    const [timer, setTimer] = useState(0);
 
     const getPosts = (id) => {
         axios.get(`http://localhost:3001/posts/${id}`).then((res) => {
@@ -15,6 +18,17 @@ const ShowPage = () => {
             setLoading(false);
         })
     };
+
+    // 다른 페이지로 이동시 메모리 정리
+    useEffect(() => {
+        const interval = setInterval(() => {
+            setTimer(prev => prev + 1);
+        }, 1000);
+
+        return () => {
+            clearInterval(interval);
+        }
+    }, []);
 
     // getPosts는 한 번만 받을 것이기 때문에 useEffect를 사용한다.
     useEffect(() => {
@@ -34,14 +48,14 @@ const ShowPage = () => {
     return (
         <div>
             <div className="d-flex">
-                <h1 className="flex-grow-1">{post.title}</h1>
-                <div>
+                <h1 className="flex-grow-1">{post.title} ({timer}초)</h1>
+                {isLoggedIn && <div>
                     <Link 
                         className="btn btn-primary"
                         to={`/blogs/${id}/edit`}>
                         Edit
                     </Link>
-                </div>
+                </div>}
             </div>
             <small className = "text-muted">
                 Created At: {printDate(post.createdAt)}

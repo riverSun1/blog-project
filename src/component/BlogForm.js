@@ -1,10 +1,13 @@
 import { useEffect, useState, useRef } from 'react'; // rendering
 import axios from 'axios';
 import { useHistory, useParams } from 'react-router';
-import { bool } from 'prop-types';
 import propTypes from 'prop-types';
+import { deleteToast } from '../helper';
+// import Toast from './Toast';
+// import useToast from '../hooks/toast';
 
-const BlogForm = ({ editing }) => {
+const BlogForm = ({ editing, addToast }) => {
+    // const [toasts, addToast, deleteToast] = useToast();
     const history = useHistory();
     const { id } = useParams();
     const [title, setTitle] = useState('');
@@ -18,8 +21,10 @@ const BlogForm = ({ editing }) => {
     const [titleError, setTitleError] = useState(false);
     const [bodyError, setBodyError] = useState(false);
     // const [toasts, setToasts] = useState([]);
-    const [, setToastsRerender] = useState(false); // true, false가 바뀌면 rerendering됨.
-    const toasts = useRef([]);
+
+    // const [, setToastsRerender] = useState(false); // true, false가 바뀌면 rerendering됨.
+    // const toasts = useRef([]);
+
     // useState는 setToast를 통해서 state 업데이트를 했을 때 리렌더링이 일어난다.
     // useRef를 사용하면 리렌더링이 일어나지 않는다.
     // setToast를 통해서 toast를 업데이트 할 때는 데이터가 곧바로 업데이트 되지않고
@@ -28,21 +33,21 @@ const BlogForm = ({ editing }) => {
 
     useEffect(() => {
         if (editing) { // 
-        axios.get(`http://localhost:3001/posts/${id}`).then(res => {
-            setTitle(res.data.title);
-            setbody(res.data.body);
-            setOriginalTitle(res.data.title);
-            setOriginalBody(res.data.body);
-            setPublish(res.data.publish);
-            setOriginalPublish(res.data.publish);
+            axios.get(`http://localhost:3001/posts/${id}`).then(res => {
+                setTitle(res.data.title);
+                setbody(res.data.body);
+                setOriginalTitle(res.data.title);
+                setOriginalBody(res.data.body);
+                setPublish(res.data.publish);
+                setOriginalPublish(res.data.publish);
             })
         }
     }, [id, editing]);
 
     const isEdited = () => { // 제목과 내용이 수정되었다면
         return title !== originalTitle
-        || body !== originalBody
-        || Publish !== originalPublish;
+            || body !== originalBody
+            || Publish !== originalPublish;
     };
 
     const goBack = () => {
@@ -67,38 +72,38 @@ const BlogForm = ({ editing }) => {
         return validated;
     }
 
-    const deleteToast = (id) => {
-        const filteredToasts = toasts.current.filter(toast => {
-            return toast.id != id; // 다를 경우 남겨두고 같으면 삭제
-        });
+    // const deleteToast = (id) => {
+    //     const filteredToasts = toasts.current.filter(toast => {
+    //         return toast.id != id; // 다를 경우 남겨두고 같으면 삭제
+    //     });
 
-        toasts.current = filteredToasts; // useRef // toasts.current = toast 값에 접근.
-        // setToasts(filteredToasts);
-        setToastsRerender(prev => !prev);
-    }
+    //     toasts.current = filteredToasts; // useRef // toasts.current = toast 값에 접근.
+    //     // setToasts(filteredToasts);
+    //     setToastsRerender(prev => !prev);
+    // }
 
-    const addToast = (toast) => {
-        const id = uuid4();
-        const toastWithId = {
-            ...toast,
-            id: id
-        }
-        // useRef // toasts.current = toast 값에 접근.
-        // 기존 toast에 새로운 toast 추가
-        toasts.current = [...toasts.current, toastWithId];
-        setToastsRerender(prev => !prev);
-        // 기존 toast와 새로운 toast를 합친다.
-        // 리렌더링을 하긴 하는데 곧바로 하는게 아니라 마지막에 모아서 해준다. (비동기적)
-        // 기존에 있던 toast를 지우고 최근 꺼는 업데이트가 바로 안돼서 삭제가 안됨.
-        // toast를 업데이트를 했을 때 업데이트 된 그 데이터에 접근을 해야지 삭제를 할 수 있다.
-        // 이 문제를 해결하기 위해서 Hooks를 사용한다.
+    // const addToast = (toast) => {
+    //     const id = uuid4();
+    //     const toastWithId = {
+    //         ...toast,
+    //         id: id
+    //     }
+    //     // useRef // toasts.current = toast 값에 접근.
+    //     // 기존 toast에 새로운 toast 추가
+    //     toasts.current = [...toasts.current, toastWithId];
+    //     setToastsRerender(prev => !prev);
+    //     // 기존 toast와 새로운 toast를 합친다.
+    //     // 리렌더링을 하긴 하는데 곧바로 하는게 아니라 마지막에 모아서 해준다. (비동기적)
+    //     // 기존에 있던 toast를 지우고 최근 꺼는 업데이트가 바로 안돼서 삭제가 안됨.
+    //     // toast를 업데이트를 했을 때 업데이트 된 그 데이터에 접근을 해야지 삭제를 할 수 있다.
+    //     // 이 문제를 해결하기 위해서 Hooks를 사용한다.
 
-        //setToasts(prev => [...prev, toastWithId]);
-        
-        setTimeout(() => {
-            deleteToast(id);
-        }, 5000);
-    };
+    //     //setToasts(prev => [...prev, toastWithId]);
+
+    //     setTimeout(() => {
+    //         deleteToast(id, toast, setToastsRerender);
+    //     }, 5000);
+    // };
 
     const onSubmit = () => {
         setTitleError(false);
@@ -123,7 +128,7 @@ const BlogForm = ({ editing }) => {
                         type: 'success',
                         text: 'Successfully created!'
                     });
-                    // history.push('/admin');
+                    history.push('/admin');
                 })
             }
         }
@@ -135,15 +140,11 @@ const BlogForm = ({ editing }) => {
 
     return (
         <div>
-            <Toast
-                toast={toasts.current}
-                deleteToast={deleteToast}
-            />
             <h1>{editing ? 'Edit' : 'Create'} a blog post</h1>
             <div className="mb-3">
                 <label className="form-label">Title</label>
                 <input
-                    className={`form-control ${titleError ? 'border-danger': ''}`}
+                    className={`form-control ${titleError ? 'border-danger' : ''}`}
                     value={title}
                     onChange={(event) => {
                         setTitle(event.target.value);
@@ -157,7 +158,7 @@ const BlogForm = ({ editing }) => {
             <div className="mb-3">
                 <label className="form-label">Body</label>
                 <textarea
-                    className={`form-control ${bodyError ? 'border-danger': ''}`}
+                    className={`form-control ${bodyError ? 'border-danger' : ''}`}
                     value={body}
                     onChange={(event) => {
                         setbody(event.target.value);
@@ -168,7 +169,7 @@ const BlogForm = ({ editing }) => {
             {bodyError && <div className="text-danger">
                 Body is required.
             </div>}
-            
+
             <div className="form-check mb-3">
                 <input // 공개글 여부
                     className="form-check-input"
