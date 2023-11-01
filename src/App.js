@@ -5,12 +5,15 @@ import {
   Routes,
   Route
 } from 'react-router-dom';
+import { useState, useEffect } from 'react';
 import NavBar from './component/NavBar';
 import routes from './routes';
 import Toast from './component/Toast';
-import useToast from '../hooks/toast';
-import { useSelector } from 'react-redux';
+import useToast from './hooks/toast';
+import { useDispatch, useSelector } from 'react-redux';
 import ProtectedRoute from './ProtectedRoute';
+import { login } from './store/authSlice';
+import LoadingSpinner from './component/LoadingSpinner';
 
 // 여러개의 state를 업데이트해도 컴포넌트는 한 번만 렌더링이 일어난다.
 // react-router package를 통해 여러개의 페이지를 가질 수 있다.
@@ -25,8 +28,20 @@ import ProtectedRoute from './ProtectedRoute';
 
 function App() {
   const toasts = useSelector(state => state.toast.toasts);
-  // const [addToast, deleteToast] = useToast();
   const { deleteToast } = useToast();
+  const [loading, setLoading] = useState(true);
+  const dispatch = useDispatch();
+  useEffect(() => {
+    if (localStorage.getItem('isLoggedIn')) {
+      dispatch(login());
+    }
+    setLoading(false);
+  }, []);
+
+  if (loading) {
+    return <LoadingSpinner />
+  }
+
   return (
     <Router>
       <NavBar />
@@ -36,22 +51,17 @@ function App() {
       />
       <div className="container mt-3">
         <Routes>
-          {routes.map((route) => {
-            if (route.auth) {
-              return <ProtectedRoute
-                path={route.path}
-                component={route.component}
-                key={route.path}
-              />
-            }
-            return <Route
-              key={route.path}
-              path={route.path}
-              component={route.component} 
-              />
-            })}
-          </Routes>
-        </div>
+          {routes.map((route) => {       
+            return <Route 
+              key={route.path} 
+              path={route.path} 
+              element={route.auth ? <ProtectedRoute
+                element={route.element}
+              /> : route.element} 
+            />
+          })}
+        </Routes>
+      </div>
     </Router>
   );
 }

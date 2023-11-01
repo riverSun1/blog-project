@@ -1,17 +1,16 @@
 import axios from 'axios';
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 // state 사용시 무한 반복 => useEffect 사용.
 import Card from '../component/Card';
-import { useHistory } from 'react-router';
+import { useNavigate } from 'react-router';
 import LoadingSpinner from '../component/LoadingSpinner';
-import Pagination, { bool } from './Pagination';
+import Pagination from './Pagination';
 import { useLocation } from 'react-router-dom'; // 현재 URL 정보 가져오기
 import propTypes from 'prop-types';
-// import { v4 as uuidv4 } from 'uuid'; // 유니크한 ID
 import useToast from '../hooks/toast';
 
 const BlogList = ({ isAdmin }) => {
-    const history = useHistory();
+    const navigaete = useNavigate();
     const location = useLocation();
     const params = new URLSearchParams(location.search); // '=3'
     const pageParam = params.get('page');
@@ -21,14 +20,10 @@ const BlogList = ({ isAdmin }) => {
     const [numberOfPosts, setNumberOfPosts] = useState(0);
     const [numberOfPages, setNumberOfPages] = useState(0); // 몇개의 페이지를 보여주느냐.
     const [searchText, setSearchText] = useState('');
-    // const [toasts, setToasts] = useState([]);
-    
+    const [error, setError] = useState('');
     const { addToast } = useToast();
-    // const [, setToastsRerender] = useState(false); // true, false가 바뀌면 rerendering됨.
-    // const toasts = useRef([]);
     const limit = 5; // 한 페이지당 포스트 갯수
 
-    // 한 페이지당 포스트갯수
     useEffect(() => {
         setNumberOfPages(Math.ceil(numberOfPosts / limit));
     }, [numberOfPosts]); // numberOfPosts가 바뀔 때마다 실행.
@@ -37,13 +32,13 @@ const BlogList = ({ isAdmin }) => {
     // history.push를 하면 history에 기록이 남게된다.
     const onClickPageButton = (page) => {
         // history.push(`/admin?page=${page}`)
-        history.push(`${location.pathname}?page=${page}`)
+        navigaete(`${location.pathname}?page=${page}`)
         setCurrentPage(page);
         getPosts(page);
     }
 
     // 페이지 번호를 누르면 onClick 함수를 통해 여기로 숫자를 전달받는다.
-    const getPosts =(page = 1) => {
+    const getPosts = useCallback((page = 1) => {
         // setCurrentPage(page);
         // 블로그 글 내림차순 정렬
         let params = { // getPosts 파라미터
@@ -66,58 +61,37 @@ const BlogList = ({ isAdmin }) => {
             setNumberOfPosts(res.headers['x-total-count']);
             setPosts(res.data);
             setLoading(false);
+        }).catch(e => {
+            setLoading(false);
+            setError('Something went wrong in database');
+            addToast({
+                text: 'Something went wrong',
+                type: 'danger'
+            })
         })
-    }
+    }, [isAdmin, searchText])
 
     useEffect(() => { // 처음에 한 번만 실행.
         setCurrentPage(parseInt(pageParam) || 1); // null일 때 =1로 세팅
-        getPosts(parseInt(pageParam) || 1); // string -> int
+        getPosts(parseInt(pageParam) || 1) // string -> int
     }, []);
-
-    // npm i uuid
-    // true일 경우 들어가고 false일 경우 들어가지 않는다.
-    // const deleteToast = (id) => {
-    //     const filteredToasts = toasts.current.filter(toast => {
-    //         return toast.id != id; // 다를 경우 남겨두고 같으면 삭제
-    //     });
-    //     toasts.current = filteredToasts;
-    //     setToasts(filteredToasts);
-    //     setToastsRerender(prev => !prev);
-    // }
-
-    // const addToast = (toast) => {
-    //     const id = uuid4();
-    //     const toastWithId = {
-    //         ...toast,
-    //         id: id
-    //     }
-    //     toasts.current = [
-    //         ...toasts.current,
-    //         toastWithId
-    //     ];
-    //     setToastsRerender(prev => !prev);
-    //     // setToasts(prev => [...prev, toastWithId]); // 기존 toast와 새로운 toast를 합친다.
-        
-    //     setTimeout(() => {
-    //         deleteToast(id);
-    //     }, 5000);
-    // };
 
     const deleteBlog = (e, id) => {
         e.stopPropagation();
+
         axios.delete(`http://localhost:3001/posts/${id}`).then(() => {
-            setPosts(prevPosts => {
-                return prevPosts.filter(post => {
-                    return post.id !== id; // 지우려는 id만 빼고 다 출력.
-                })
-            })
-            // 삭제가 되었을 때 toast를 추가.
+            getPosts(1); // 블로그 글 지웠을 때 1페이지로 간다. (5개 제목 표시)
             addToast({
                 text: 'Successfully deleted',
                 type: 'success'
             });
+        }).catch(e => {
+            addToast({
+                text: 'The blog could not be deleted.',
+                type: 'danger'
+            })
         });
-    }
+    };
 
     // useEffect(() => {
     //     getPosts(); // 데이터를 받아온다.
@@ -128,23 +102,18 @@ const BlogList = ({ isAdmin }) => {
             <LoadingSpinner />
         );
     }
-
-    if (posts.length === 0) {
-        return (<div>No blog posts.</div>)
-    }
-
+    
+    // 자식 컴포넌트에 데이터를 보냄.
     const renderBlogList = () => {
-        return posts.filter(post => {
-            return isAdmin || post.publish
-        }).map(post => {
-            return ( // 자식 컴포넌트에 데이터를 보냄.
+        return posts.map(post => {
+            return ( 
                 <Card
                     key={post.id}
                     title={post.title}
-                    onClick={() => history.push(`/blogs/${post.id}`)}>
+                    onClick={() => navigaete(`/blogs/${post.id}`)}>
                     {isAdmin ? (<div>
                         <button className='btn btn-danger btn-sm'
-                            onClick={deleteBlog(e, post.id)}
+                            onClick={(e) => deleteBlog(e, post.id)}
                         >Delete</button>
                     </div>) : null}
                 </Card>
@@ -157,20 +126,20 @@ const BlogList = ({ isAdmin }) => {
     // e -> onKeyUpEvent를 받아온다.
     const onSearch = (e) => {
         if (e.key === 'Enter') {
-            history.push(`${location.pathname}?page=1`)
+            navigaete(`${location.pathname}?page=1`)
             // search해서 enter키 입력시 항상 첫 번째 페이지를 가져오도록 하자.
             setCurrentPage(1);
             getPosts(1);
         }
     }
 
+    if (error) {
+        return <div>{error}</div>
+    }
+
     // props로 넘긴다.
     return (
         <div>
-            {/* <Toast
-                toasts={toasts}
-                deleteToast={deleteToast}
-            /> */}
             <input
                 type="text"
                 placeholder='Search...'
@@ -187,12 +156,9 @@ const BlogList = ({ isAdmin }) => {
                     {numberOfPages > 1 && <Pagination
                         currentPage={currentPage}
                         numberOfPages={numberOfPages} // 1,2,3,4,5
-                        // onClick={getPosts}
                         onClick={onClickPageButton}
                     />}
-                </>
-            }
-
+                </>}
         </div>
     )
 };

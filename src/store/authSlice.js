@@ -9,9 +9,11 @@ const authSlice = createSlice({
     initialState: initialState,
     reducers: {
         login: (state) => {
+            localStorage.setItem('isLoggedIn', 'yes');
             state.isLoggedIn = true;
         },
-        logout: () => {
+        logout: (state) => {
+            localStorage.removeItem('isLoggedIn');
             state.isLoggedIn = false;
         }
     }

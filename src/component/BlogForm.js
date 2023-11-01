@@ -1,17 +1,16 @@
-import { useEffect, useState, useRef } from 'react'; // rendering
+import { useEffect, useState } from 'react'; // rendering
 import axios from 'axios';
-import { useHistory, useParams } from 'react-router';
+import { useNavigate, useParams } from 'react-router';
 import propTypes from 'prop-types';
-import { deleteToast } from '../helper';
+import LoadingSpinner from './LoadingSpinner';
+import useToast from '../hooks/toast';
 // import Toast from './Toast';
-// import useToast from '../hooks/toast';
 
-const BlogForm = ({ editing, addToast }) => {
-    // const [toasts, addToast, deleteToast] = useToast();
-    const history = useHistory();
+const BlogForm = ({ editing }) => {
+    const navigaete = useNavigate();
     const { id } = useParams();
     const [title, setTitle] = useState('');
-    const [body, setbody] = useState('');
+    const [body, setBody] = useState('');
     const [originalTitle, setOriginalTitle] = useState('');
     const [originalBody, setOriginalBody] = useState('');
     const [Publish, setPublish] = useState(false);
@@ -20,8 +19,9 @@ const BlogForm = ({ editing, addToast }) => {
     // package.json에 추가해서 npm run db라고 해도 db가 실행된다.
     const [titleError, setTitleError] = useState(false);
     const [bodyError, setBodyError] = useState(false);
-    // const [toasts, setToasts] = useState([]);
-
+    const { addToast } = useToast();
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
     // const [, setToastsRerender] = useState(false); // true, false가 바뀌면 rerendering됨.
     // const toasts = useRef([]);
 
@@ -32,15 +32,25 @@ const BlogForm = ({ editing, addToast }) => {
     // 근데 useRef 같은 경우에는 우리가 업데이트를 하면 즉시 업데이트가 된다.
 
     useEffect(() => {
-        if (editing) { // 
+        if (editing) {
             axios.get(`http://localhost:3001/posts/${id}`).then(res => {
                 setTitle(res.data.title);
-                setbody(res.data.body);
                 setOriginalTitle(res.data.title);
+                setBody(res.data.body);
                 setOriginalBody(res.data.body);
                 setPublish(res.data.publish);
                 setOriginalPublish(res.data.publish);
+                setLoading(false);
+            }).catch(e => {
+                setError('something went wrong in db');
+                addToast({
+                    type: 'danger',
+                    text: 'something went wrong in db'
+                })
+                setLoading(false);
             })
+        } else {
+            setLoading(false);
         }
     }, [id, editing]);
 
@@ -52,9 +62,9 @@ const BlogForm = ({ editing, addToast }) => {
 
     const goBack = () => {
         if (editing) {
-            history.push(`/blogs/${id}`);
+            navigaete(`/blogs/${id}`);
         } else {
-            history.push('/blogs'); // 새로 글을 쓰는 곳은 id가 없다.
+            navigaete('/blogs'); // 새로 글을 쓰는 곳은 id가 없다.
         }
     };
 
@@ -72,39 +82,6 @@ const BlogForm = ({ editing, addToast }) => {
         return validated;
     }
 
-    // const deleteToast = (id) => {
-    //     const filteredToasts = toasts.current.filter(toast => {
-    //         return toast.id != id; // 다를 경우 남겨두고 같으면 삭제
-    //     });
-
-    //     toasts.current = filteredToasts; // useRef // toasts.current = toast 값에 접근.
-    //     // setToasts(filteredToasts);
-    //     setToastsRerender(prev => !prev);
-    // }
-
-    // const addToast = (toast) => {
-    //     const id = uuid4();
-    //     const toastWithId = {
-    //         ...toast,
-    //         id: id
-    //     }
-    //     // useRef // toasts.current = toast 값에 접근.
-    //     // 기존 toast에 새로운 toast 추가
-    //     toasts.current = [...toasts.current, toastWithId];
-    //     setToastsRerender(prev => !prev);
-    //     // 기존 toast와 새로운 toast를 합친다.
-    //     // 리렌더링을 하긴 하는데 곧바로 하는게 아니라 마지막에 모아서 해준다. (비동기적)
-    //     // 기존에 있던 toast를 지우고 최근 꺼는 업데이트가 바로 안돼서 삭제가 안됨.
-    //     // toast를 업데이트를 했을 때 업데이트 된 그 데이터에 접근을 해야지 삭제를 할 수 있다.
-    //     // 이 문제를 해결하기 위해서 Hooks를 사용한다.
-
-    //     //setToasts(prev => [...prev, toastWithId]);
-
-    //     setTimeout(() => {
-    //         deleteToast(id, toast, setToastsRerender);
-    //     }, 5000);
-    // };
-
     const onSubmit = () => {
         setTitleError(false);
         setBodyError(false);
@@ -115,7 +92,13 @@ const BlogForm = ({ editing, addToast }) => {
                     body: body,
                     publish: Publish
                 }).then(res => {
-                    history.push(`/blogs/${id}`)
+                    console.log(res);
+                    navigaete(`/blogs/${id}`)
+                }).catch(e => {
+                    addToast({
+                        type: 'danger',
+                        text: 'We could not update blog.'
+                    })
                 })
             } else { // 새로 작성
                 axios.post('http://localhost:3001/posts', {
@@ -128,7 +111,12 @@ const BlogForm = ({ editing, addToast }) => {
                         type: 'success',
                         text: 'Successfully created!'
                     });
-                    history.push('/admin');
+                    navigaete('/admin');
+                }).catch(e => {
+                    addToast({
+                        type: 'danger',
+                        text: 'We could not create blog.'
+                    })
                 })
             }
         }
@@ -137,6 +125,14 @@ const BlogForm = ({ editing, addToast }) => {
     const onChangePublish = (e) => {
         setPublish(e.target.checked);
     };
+
+    if (loading) {
+        return <LoadingSpinner />
+    }
+
+    if (error) {
+        return (<div>{error}</div>)
+    }
 
     return (
         <div>
@@ -149,27 +145,23 @@ const BlogForm = ({ editing, addToast }) => {
                     onChange={(event) => {
                         setTitle(event.target.value);
                     }} />
+                {titleError && <div className="text-danger">
+                    Title is required.
+                </div>}
             </div>
-
-            {titleError && <div className="text-danger">
-                Title is required.
-            </div>}
-
             <div className="mb-3">
                 <label className="form-label">Body</label>
                 <textarea
                     className={`form-control ${bodyError ? 'border-danger' : ''}`}
                     value={body}
                     onChange={(event) => {
-                        setbody(event.target.value);
+                        setBody(event.target.value);
                     }}
                     rows="10" />
+                {bodyError && <div className="text-danger">
+                    Body is required.
+                </div>}
             </div>
-
-            {bodyError && <div className="text-danger">
-                Body is required.
-            </div>}
-
             <div className="form-check mb-3">
                 <input // 공개글 여부
                     className="form-check-input"

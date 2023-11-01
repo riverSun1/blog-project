@@ -1,0 +1,40 @@
+{
+  "posts": [
+    {
+      "id": 1,
+      "title": "json-server",
+      "author": "typicode"
+    },
+    {
+      "title": "1번째",
+      "body": "1번째",
+      "publish": true,
+      "createdAt": 1698669421799,
+      "id": 2
+    },
+    {
+      "title": "비밀글",
+      "body": "비밀글",
+      "publish": false,
+      "createdAt": 1698669431837,
+      "id": 3
+    },
+    {
+      "title": "2번째",
+      "body": "2번째",
+      "publish": true,
+      "createdAt": 1698669477879,
+      "id": 4
+    }
+  ],
+  "comments": [
+    {
+      "id": 1,
+      "body": "some comment",
+      "postId": 1
+    }
+  ],
+  "profile": {
+    "name": "typicode"
+  }
+}
