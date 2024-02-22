@@ -9,4 +9,6 @@
 https://www.npmjs.com/package/json-server
 <br><br>
 * React 프로젝트가 3000번 port를 사용하고 있어서<br>
-DB는 3001번 port를 사용하도록 하였습니다.
+DB는 3001번 port를 사용하도록 하였습니다.</br></br>
+
+<img src="https://github.com/riverSun1/blog-project/assets/67379144/9bc0a5b7-2d43-4a4a-9f9c-c1f105663398" width="700"/></br>
